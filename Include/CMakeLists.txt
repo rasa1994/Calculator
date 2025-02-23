@@ -1,0 +1,5 @@
+add_library(InputChecker STATIC InputChecker.ixx)
+add_library(FunctionEvaluator STATIC FunctionEvaluation.ixx)
+target_link_libraries(FunctionEvaluator PRIVATE InputChecker)
+target_include_directories(FunctionEvaluator PRIVATE ${CMAKE_SOURCE_DIR}/Include)
+target_link_directories(FunctionEvaluator PRIVATE ${CMAKE_SOURCE_DIR}/Include)
