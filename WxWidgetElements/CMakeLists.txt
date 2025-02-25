@@ -5,11 +5,11 @@ add_executable(WxWidgetElements Calculator.cpp)
 target_sources(WxWidgetElements PRIVATE
 ${CMAKE_SOURCE_DIR}/${IncludeFolder}/Constants.ixx 
 Application.h
-Frame.h
+ApplicationFrame.h
 DigitButton.h
 InputField.h
 Application.cpp
-Frame.cpp
+ApplicationFrame.cpp
 DigitButton.cpp
 InputField.cpp
 )
