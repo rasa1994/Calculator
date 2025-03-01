@@ -13,6 +13,8 @@ const auto Comp = [](const auto& v1, const auto v2)
 		return std::ranges::equal(v1, v2, [](const auto& wLH, const auto& wRH) {return wLH == wRH; });
 	};
 
+
+
 TEST(InputCheckerTest, IsSimpleOperation)
 {
 	EXPECT_TRUE(IsSimpleOperation("+"));
@@ -436,6 +438,68 @@ TEST(InputCheckerTest, CreatePolishNotationExpression)
 	EXPECT_TRUE(Comp(CreatePolishNotationExpression	(std::vector<std::string>{"(", "4", "-", "1", ")", "*", "9"}), std::deque<std::string>{"4", "1", "-", "9", "*"}));
 	EXPECT_TRUE(Comp(CreatePolishNotationExpression(std::vector<std::string>{"(", "4", "-", "1", ")", "*", "(", "9", "+", "6", ")"}),
 		std::deque<std::string>{"4", "1", "-", "9","6", "+", "*"}));
+}
+
+TEST(FunctionEvaluationTests, PrimeDividers)
+{
+	EXPECT_TRUE(Comp(GeneratePrimeDividers(10), std::deque{ 2ull,5ull }));
+	EXPECT_TRUE(Comp(GeneratePrimeDividers(20), std::deque{ 2ull, 2ull, 5ull }));
+	EXPECT_TRUE(Comp(GeneratePrimeDividers(173), std::deque{ 173ull }));
+}
+
+TEST(FunctionEvaluationTests, DivideTwoNumbers)
+{
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 2,2,2 }, 2u), std::deque{ 1u,1u,1u }));
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 1,0,0 }, 2u), std::deque{ 5u,0u }));
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 1,0,0 }, 10u), std::deque{ 1u, 0u }));
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 6,2,5 }, 25u), std::deque{ 2u, 5u }));
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 1,0,0,0 }, 25u), std::deque{ 4u, 0u }));
+
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 2,5,2,5 }, 25u), std::deque{ 1u, 0u, 1u }));
+	EXPECT_TRUE(Comp(DivideTwoNumbers({ 1,0,0,0,0,0,0 }, 1000u), std::deque{ 1u, 0u, 0u, 0u }));
+}
+
+TEST(FunctionEvaluationTests, IsDivisible)
+{
+	EXPECT_TRUE(IsDivisible({ 1,0,0 }, 2u));
+	EXPECT_TRUE(IsDivisible({ 1,0,0 }, 10u));
+	EXPECT_TRUE(IsDivisible({ 6,2,5 }, 25u));
+	EXPECT_TRUE(IsDivisible({ 1,0,0,0 }, 25u));
+	EXPECT_TRUE(IsDivisible({ 2,5,2,5 }, 25u));
+	EXPECT_TRUE(IsDivisible({ 1,0,0,0,0,0,0 }, 1000u));
+	EXPECT_FALSE(IsDivisible({ 1,0,0 }, 3u));
+	EXPECT_TRUE(IsDivisible({ 1,0,0 }, 5u));
+	EXPECT_FALSE(IsDivisible({ 6,2,5 }, 3u));
+	EXPECT_FALSE(IsDivisible({ 1,0,0,0 }, 7u));
+	EXPECT_FALSE(IsDivisible({ 2,5,2,5 }, 3u));
+	EXPECT_FALSE(IsDivisible({ 1,0,0,0,0,0,0 }, 7u));
+}
+
+
+TEST(FunctionEvaluationTests, ShrinkTwoNumbers)
+{
+	const auto res1 = ShrinkTwoNumbers({ 1,0,0 }, { 2,5 });
+	const auto res2 = ShrinkTwoNumbers({ 1, 0, 0, 0 }, { 1, 0, 0, 0 });
+	const auto res3 = ShrinkTwoNumbers({ 1, 0, 0, 0 }, { 1, 0, 0, 0, 0 });
+	EXPECT_TRUE(Comp(res1.first, std::deque{ 4 }));
+	EXPECT_TRUE(Comp(res1.second, std::deque{ 1 }));
+	EXPECT_TRUE(Comp(res2.first, std::deque{ 1 }));
+	EXPECT_TRUE(Comp(res2.second, std::deque{ 1 }));
+	EXPECT_TRUE(Comp(res3.first, std::deque{ 1 }));
+	EXPECT_TRUE(Comp(res3.second, std::deque{ 1, 0 }));
+}
+
+TEST(FunctionEvaluationTests, GetBinom)
+{
+	EXPECT_TRUE(Comp(GetBinom("2,1"), std::deque{ 2 }));
+	EXPECT_TRUE(Comp(GetBinom("10,5"), std::deque{ 2,5,2 }));
+	EXPECT_TRUE(Comp(GetBinom("39,7"), std::deque{ 1,5,3,8,0,9,3,7}));
+	//EXPECT_TRUE(Comp(GetBinom("115,42"), std::deque{ 115, 42 }));
+	//EXPECT_TRUE(Comp(GetBinom("91,91"), std::deque{ 91, 91 }));
+	//EXPECT_TRUE(Comp(GetBinom("91,91,91"), std::deque{ 91, 91 }));
+	//EXPECT_TRUE(Comp(GetBinom("91,91,91111"), std::deque{ 91, 91 }));
+	//EXPECT_TRUE(Comp(GetBinom("91,91,91123123"), std::deque{ 91, 91 }));
+	//EXPECT_TRUE(Comp(GetBinom("91,91,9144411,124494"), std::deque{ 91, 91 }));
 }
 
 int RunAllTests()

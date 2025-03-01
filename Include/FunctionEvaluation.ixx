@@ -12,12 +12,13 @@ import <exception>;
 import <stack>;
 import <string_view>;
 import <string>;
+import <unordered_set>;
 
 namespace
 {
 	std::unordered_map<unsigned short, std::deque<uint8_t>> CalculatedResults;
 	unsigned short MaxEvaluated;
-	std::once_flag InitializedFactoriel;
+	std::once_flag InitializedFactoriel, InitializedPrime;
 }
 
 export
@@ -31,10 +32,13 @@ export
 	template <typename Number>
 	NumberAsArray MultiplyTwoNumbers(const Number& number, const Number& multiplier);
 
-	bool DivideTwoNumbers(NumberAsArray& number, unsigned int divider);
-	void DivideTwoNumbers(unsigned int number, unsigned int divider);
-	void ShrinkTwoNumbers(NumberAsArray& number1, NumberAsArray& number2);
-	std::deque<unsigned long long> GeneratePrimeDividers(unsigned long limit);
+	bool IsDivisible(const NumberAsArray& number, unsigned int divider);
+	NumberAsArray DivideTwoNumbers(const NumberAsArray& number, unsigned int divider);
+
+	using DequeLeftRightPart = std::pair <NumberAsArray, NumberAsArray>;
+	DequeLeftRightPart ShrinkTwoNumbers(const NumberAsArray& number1, const NumberAsArray& number2);
+	std::deque<unsigned long long> GeneratePrimeDividers(unsigned long long limit);
+	std::deque<unsigned long long> GenerateUniquePrimeNumbers(unsigned long long limit);
 
 	NumberAsArray GetBinom(std::string_view binomElements) noexcept;
 	void RemoveLeadingZeros(NumberAsArray& number);
@@ -63,9 +67,162 @@ long double DoOperation(const NumberTypeL& number1, const NumberTypeR& number2, 
 	throw std::runtime_error("Invalid operation!");
 }
 
+
+
+bool IsDivisible(const NumberAsArray& number, unsigned int divider)
+{
+	NumberAsArray result{};
+	auto remainder = 0;
+	for (const auto& digit : number)
+	{
+		const auto value = remainder * 10 + digit;
+		result.push_back(value / divider);
+		remainder = value % divider;
+	}
+
+	return remainder == 0;
+}
+
+
+
+NumberAsArray DivideTwoNumbers(const NumberAsArray& number, unsigned int divider)
+{
+	NumberAsArray result{};
+	auto remainder = 0;
+	for (const auto& digit : number)
+	{
+		const auto value = remainder * 10 + digit;
+		result.push_back(value / divider);
+		remainder = value % divider;
+	}
+	RemoveLeadingZeros(result);
+	return result;
+}
+
+
+
+DequeLeftRightPart ShrinkTwoNumbers(const NumberAsArray& number1, const NumberAsArray& number2)
+{
+	DequeLeftRightPart result = std::make_pair(number1, number2);
+
+	auto& [number1Original, number2Original] = result;
+
+	const auto biggest = std::pow<unsigned long long>(10, (std::max(number1Original.size(), number2Original.size())));
+	
+	// TODO: cache this part, this method will be called several times
+	auto primeDivisiors = GenerateUniquePrimeNumbers(biggest);
+
+	while (!primeDivisiors.empty())
+	{
+		const auto divider = primeDivisiors.front();
+		if (IsDivisible(number1Original, divider) && IsDivisible(number2Original, divider))
+		{
+			number1Original = DivideTwoNumbers(number1Original, divider);
+			number2Original = DivideTwoNumbers(number2Original, divider);
+		}
+		else 
+			primeDivisiors.pop_front();
+	}
+
+	return result;
+}
+
+
+
+std::deque<unsigned long long> GeneratePrimeDividers(unsigned long long limit)
+{
+	std::deque<unsigned long long> primeDividers;
+	auto divider = 2ull;
+
+	while (limit > 1)
+	{
+		if (limit % divider == 0)
+		{
+			primeDividers.push_back(divider);
+			limit /= divider;
+		}
+		else
+		{
+			++divider;
+		}
+	}
+	
+	return primeDividers;
+}
+
+int BinarySearch(const auto& container, const auto& value)
+{
+	auto left = 0;
+	auto right = container.size() - 1;
+	while (left <= right)
+	{
+		auto middle = left + (right - left) / 2;
+		auto nextToMiddle = middle + 1;
+		if (nextToMiddle >= container.size())
+			return -1;
+
+		if (value > container[middle] && value <= container[nextToMiddle])
+			return nextToMiddle;
+
+		if (value > container[middle])
+			left = middle + 1;
+		else
+			right = middle - 1;
+	}
+	return -1;
+}
+
+std::deque<unsigned long long> GenerateUniquePrimeNumbers(unsigned long long limit)
+{
+	static std::deque<unsigned long long> result;
+	std::call_once(InitializedPrime, []() 
+		{
+			result.push_back(2);
+		});
+
+	std::unordered_set <unsigned long long> oddNumbers;
+
+	bool biggerThanLast = limit < result.back();
+
+	for (auto divider{ result.back() }; divider <= limit; ++divider)
+	{
+		if (!oddNumbers.contains(divider))
+		{
+			result.push_back(divider);
+			for (auto multiple = divider; multiple <= limit / divider; multiple++)
+			{
+				oddNumbers.insert(multiple * divider);
+			}
+		}
+	}
+
+	if (biggerThanLast)
+	{
+		return std::deque(result.begin(), result.begin() + BinarySearch(result, limit));
+	}
+	else
+		return result;
+}
+
+
+
 NumberAsArray GetBinom(std::string_view binomElements) noexcept
 {
-	return {};
+	const auto [n, r] = GetNumbersForBinomFormula(binomElements);
+	if (n < r)
+		return{};
+
+	auto nFactorial = CalculateBigNumberFactorial(n);
+	auto rFactorial = CalculateBigNumberFactorial(r);
+	auto nMinusRFactorial = CalculateBigNumberFactorial(n - r);
+	std::tie(nFactorial, rFactorial) = ShrinkTwoNumbers(nFactorial, rFactorial);
+	std::tie(nFactorial, nMinusRFactorial) = ShrinkTwoNumbers(nFactorial, nMinusRFactorial);
+
+	auto bigMultiply = MultiplyTwoNumbers(rFactorial, nMinusRFactorial);
+	std::tie(nFactorial, bigMultiply) = ShrinkTwoNumbers(nFactorial, bigMultiply);
+
+
+	return nFactorial;
 }
 
 NumberAsArray ConvertNumberToArray(unsigned short number)
